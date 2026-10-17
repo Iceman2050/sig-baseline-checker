@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sig-baseline-checker"
+version = "1.0.0"
+description = "Per-author commit-signing baselines from git history; flag signing-identity anomalies (stdlib only)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+[project.scripts]
+sig-baseline-checker = "sig_baseline_checker:main"
+
+[tool.setuptools]
+py-modules = ["sig_baseline_checker"]
