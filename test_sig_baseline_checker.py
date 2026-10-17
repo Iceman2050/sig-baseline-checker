@@ -88,6 +88,42 @@ def t_clean_history_no_critical():
     assert not [x for x in f if x["severity"] == "CRITICAL"]
 
 
+
+def t_multiple_authors_baselines():
+    commits = _always_signer(4) + [_commit("b%02d" % i, "Bob", i % 2 == 0,
+                                          files=["x.py"]) for i in range(6)]
+    b = learn_baselines(commits)
+    assert set(b) == {"Alice", "Bob"}
+    assert b["Bob"]["sign_rate"] == 0.5
+    assert b["Bob"]["always_signs"] is False
+
+
+def t_mixed_signer_unsigned_not_critical():
+    commits = [_commit("m%02d" % i, "Mel", i % 2 == 0, files=["x.py"])
+               for i in range(6)]
+    b = learn_baselines(commits)
+    f = flag_anomalies(commits, b)
+    assert not [x for x in f if x["finding"] == "unsigned-by-always-signer"]
+
+
+def t_release_paths_cover_workflows():
+    assert _touches_release([".github/workflows/publish.yml", "src/a.py"]) == \
+        [".github/workflows/publish.yml"]
+
+
+def t_finding_has_sha_and_author():
+    b = learn_baselines(_always_signer())
+    commits = _always_signer() + [_commit("zz99", "Alice", False)]
+    f = flag_anomalies(commits, b)
+    assert f[0]["sha"] == "zz99" and f[0]["author"] == "Alice"
+
+
+def t_check_on_real_git_repo():
+    from sig_baseline_checker import check
+    r = check(".", limit=5)
+    assert "commits_analyzed" in r and "verdict" in r
+
+
 def test_all_checks():
     for name, fn in sorted(
             [(k, v) for k, v in globals().items() if k.startswith("t_")]):
