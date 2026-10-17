@@ -1,23 +1,36 @@
 # sig-baseline-checker
 
-**The attacker didn't break the lock. They signed nothing — and nobody noticed.**
+**Supply-chain attackers don't need to break crypto — they just need one unsigned commit to slip in.**
 
-On 2026-10-05, `@subql/common@5.8.3` was poisoned after an attacker pushed an **UNSIGNED commit impersonating a maintainer who always GPG-signs**, tampered `.github/workflows/publish.yml`, then published via GitHub Actions OIDC Trusted Publisher (flatt.tech). Provenance stopped being a trust signal the moment the repo itself was compromised.
+The subql incident (Oct 2026) showed signing gaps are the norm, not the exception. This tool builds a per-author commit-signing baseline for any git repo and flags anomalies: unsigned commits from usually-signing authors, new signers, missing baselines.
 
-`sig-baseline-checker` learns each author's commit-signing habit from git history (sign rate, keys used), then flags signing-identity anomalies:
-- **Unsigned commit from an always-signer** → CRITICAL (the subql tell)
-- **Brand-new signing key** for a known author → MEDIUM
-- **Unsigned commits touching release/publish paths** (workflows, setup.py, package.json, …) → HIGH
-
-Deterministic git-history math — not a classifier.
-
-## What it does NOT detect
-Malicious code in signed commits, or compromised keys. It checks signing *identity consistency*, not code safety. A clean report means "no signing anomalies", never "this repo is safe".
-
-## Usage
+## 30-second quickstart
 ```
-python -m sig_baseline_checker /path/to/repo --limit 500
+python sig_baseline_checker.py /path/to/repo --limit 500
 ```
+
+## Example output
+```
+{
+  "commits_analyzed": 1,
+  "authors": 1,
+  "findings": [
+    {
+      "sha": "763496e9fe0a",
+      "author": "Iceman2050",
+      "finding": "no-signing-baseline",
+      "severity": "INFO",
+      "detail": "Iceman2050 has only 1 commit(s) in history — no signing baseline yet; review manually."
+    }
+  ],
+  "verdict": "1 signing anomal(ies)"
+}
+```
+
+`repo` defaults to `.`, `--limit` caps commits analyzed (default 500).
+
+## What it does NOT do
+It reads git history — it can't verify signatures against a keyserver or prove a commit wasn't forged with a stolen key. Baseline quality depends on history depth.
 
 ## Built by Ingenious AI
 
